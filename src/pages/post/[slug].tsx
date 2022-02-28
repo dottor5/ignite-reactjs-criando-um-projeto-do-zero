@@ -1,10 +1,11 @@
 /* eslint-disable react/no-danger */
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { RichText } from 'prismic-dom';
-import { FiCalendar, FiUser } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiUser } from 'react-icons/fi';
 import Prismic from '@prismicio/client';
 import format from 'date-fns/format';
 import { ptBR } from 'date-fns/locale';
+import { useRouter } from 'next/router';
 import Header from '../../components/Header';
 
 import { getPrismicClient } from '../../services/prismic';
@@ -34,6 +35,23 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps): JSX.Element {
+  const router = useRouter();
+  const wordCount = post.data.content.reduce((acc, curr) => {
+    acc += curr.heading.split(' ').length;
+
+    const words = curr.body.reduce((acc, curr) => {
+      acc += curr.text.split(' ').length;
+      return acc;
+    }, 0);
+    acc += words;
+    return acc;
+  }, 0);
+
+  const readTime = Math.ceil(wordCount / 200);
+
+  if (router.isFallback) {
+    return <div>Carregando...</div>;
+  }
   return (
     <>
       <Header />
@@ -45,13 +63,16 @@ export default function Post({ post }: PostProps): JSX.Element {
           <ul>
             <li>
               <FiCalendar />
-              {format(new Date(post.first_publication_date), ' dd MMM yyyy', {
+              {format(new Date(post.first_publication_date), 'dd MMM yyyy', {
                 locale: ptBR,
               })}
             </li>
             <li>
               <FiUser />
               {post.data.author}
+            </li>
+            <li>
+              <FiClock /> {`${readTime} min`}
             </li>
           </ul>
         </div>
